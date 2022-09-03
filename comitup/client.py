@@ -15,7 +15,7 @@ import sys
 
 import dbus
 
-from comitup.blink import blink, can_blink  # noqa
+from comitup.status_led import blink, can_blink  # noqa
 
 
 class CiuClient(object):

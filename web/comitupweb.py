@@ -33,6 +33,8 @@ sys.path.append(".")
 sys.path.append("..")
 
 from comitup import client as ciu  # noqa
+from comitup import config as config  # noqa
+
 
 ciu_client = None
 LOG_PATH = "/var/log/comitup-web.log"
@@ -85,8 +87,11 @@ def create_app(log):
         for point in points:
             point["ssid_encoded"] = urllib.parse.quote(point["ssid"])
         log.info("index.html - {} points".format(len(points)))
+
+        (conf, _) = config.load_data()
+
         return render_template(
-            "index.html", points=points, can_blink=ciu.can_blink()
+            "index.html", points=points, can_blink=ciu.can_blink(), config=conf
         )
 
     @app.route("/confirm")

@@ -11,9 +11,6 @@
 </head>
 <body class="uk-height-1-1">
 <div class="uk-flex uk-flex-center uk-flex-middle">
-    <div class="uk-position-bottom-center uk-position-small">
-        <span class="uk-text-small uk-text-muted">Comitup - Built with <a href="https://github.com/davesteele/comitup" title="Comitup" target="_blank" data-uk-tooltip>ComitUp</a></span>
-    </div>
     <div class="uk-width-large uk-padding-small">
         <div class="uk-width-1-1 uk-text-center">
             <span class="" uk-icon="icon: world; ratio: 5"></span>
@@ -23,10 +20,10 @@
         <div class="uk-margin">
             <div class="uk-width-1-1">
                 <p>
-                    Press the Connect button to connect this device to {{ ssid }}. <br><br>
+                    Press the Connect button to connect this device to <pre>{{ ssid }}</pre><br><br>
 
                     {% if mode == 'single' %}
-                    This will terminate the current hotspot. Connect to {{ ssid }}.local for access.<br><br>
+                    This will terminate the current hotspot.<br><br>
 
                     If the connection fails, this hotspot will be re-created.<br><br>
                     {% else %}
