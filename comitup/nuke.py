@@ -12,14 +12,14 @@ try:
 except ModuleNotFoundError:
     pass
 
-from comitup import blink  # noqa
+from comitup import status_led  # noqa
 from comitup import config  # noqa
 from comitup import nm  # noqa
 
-GPIO_INPUT = 21
+GPIO_BTN_PIN = 26
+GPIO_BTN_SRC = 20
 
 log = logging.getLogger("comitup")
-
 
 def checkenabled(fn):
     @wraps(fn)
@@ -41,43 +41,55 @@ def nuke():
     for ssid in nm.get_all_wifi_connection_ssids():
         nm.del_connection_by_ssid(ssid)
 
-    os.kill(os.getpid(), signal.SIGTERM)
+    log.warning("configuration nuked, rebooting")
+    os.system("shutdown -r now 'comitup config nuked'")
+    # os.kill(os.getpid(), signal.SIGTERM)
 
 
 def gpio_callback(dummy):
     log.debug("Nuke start event detected")
-    process_low_event()
+    status_led.on()
+    process_button_event()
 
 
-def process_low_event():
+def process_button_event():
+    if GPIO.input(GPIO_BTN_PIN) == GPIO.LOW:
+        return
+
     total_time = 3
     check_interval = 0.01
+    start_time = time.time()
+    hold_time = 0
 
-    for _ in range(int(total_time / check_interval)):
+    while GPIO.input(GPIO_BTN_PIN) and hold_time < total_time:
+        if hold_time > 0.5:
+            status_led.on()
+        if GPIO.input(GPIO_BTN_PIN) == GPIO.LOW and hold_time > 0.5:
+            break
+        hold_time = time.time() - start_time
         time.sleep(check_interval)
-        if GPIO.input(GPIO_INPUT):
-            return
 
-    log.warning("Nuke function invoked")
-
-    blink.blink(3)
-
-    nuke()
-
+    if hold_time > total_time:
+        log.warning("Nuke function invoked")
+        status_led.blink(5)
+        nuke()
+    else:
+        log.info("nuclear war averted")
+        status_led.off()
 
 @checkenabled
 def init_nuke():
     GPIO.setmode(GPIO.BCM)
 
-    GPIO.setup(GPIO_INPUT, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-    GPIO.add_event_detect(GPIO_INPUT, GPIO.FALLING, gpio_callback, 10)
+    GPIO.setup(GPIO_BTN_SRC, GPIO.OUT, initial=GPIO.HIGH)
+    GPIO.setup(GPIO_BTN_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    GPIO.add_event_detect(GPIO_BTN_PIN, GPIO.RISING, callback=gpio_callback, bouncetime=200)
 
     # So maybe the pin is already shorted?
-    process_low_event()
+    process_button_event()
 
 
 @checkenabled
 def cleanup_nuke():
-    GPIO.remove_event_detect(GPIO_INPUT)
-    GPIO.setup(GPIO_INPUT, GPIO.IN, pull_up_down=GPIO.PUD_OFF)
+    GPIO.remove_event_detect(GPIO_BTN_PIN)
+    GPIO.setup(GPIO_BTN_PIN, GPIO.IN, pull_up_down=GPIO.PUD_OFF)
