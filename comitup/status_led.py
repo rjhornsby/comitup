@@ -14,8 +14,10 @@ import getpass
 sys.stderr.write(f"EUSER is {getpass.getuser()}\n")
 sys.stderr.flush()
 
-GPIO.setmode(GPIO.BCM)
-LED_PIN = 21
+if not GPIO.getmode():
+    GPIO.setmode(GPIO.BCM)
+
+LED_PIN = 20
 GPIO.setup(LED_PIN, GPIO.OUT, initial=GPIO.LOW)
 
 
@@ -37,9 +39,9 @@ def blink(times: int = 1) -> None:
     """Blink the green led n times."""
 
     for _ in range(times):
-        GPIO.output(LED_PIN, GPIO.HIGH)
+        on()
         time.sleep(0.25)
-        GPIO.output(LED_PIN, GPIO.LOW)
+        off()
         time.sleep(0.25)
 
 

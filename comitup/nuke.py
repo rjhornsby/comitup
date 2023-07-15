@@ -16,8 +16,16 @@ from comitup import status_led  # noqa
 from comitup import config  # noqa
 from comitup import nm  # noqa
 
-GPIO_BTN_PIN = 26
-GPIO_BTN_SRC = 20
+# NC BUTTON - UNIQUE CONFIG to ONE MODEL
+GPIO_BTN_PIN = 21
+GPIO_BTN_SRC = 26
+
+BUTTON_OFF_STATE = GPIO.LOW
+BUTTON_ON_STATE = GPIO.HIGH
+
+BUTTON_INITIAL_STATE = GPIO.HIGH  # NC button
+BUTTON_PUD = GPIO.PUD_UP
+BUTTON_EDGE = GPIO.RISING
 
 log = logging.getLogger("comitup")
 
@@ -53,7 +61,7 @@ def gpio_callback(dummy):
 
 
 def process_button_event():
-    if GPIO.input(GPIO_BTN_PIN) == GPIO.LOW:
+    if GPIO.input(GPIO_BTN_PIN) == BUTTON_OFF_STATE:
         return
 
     total_time = 3
@@ -61,10 +69,11 @@ def process_button_event():
     start_time = time.time()
     hold_time = 0
 
-    while GPIO.input(GPIO_BTN_PIN) and hold_time < total_time:
-        if hold_time > 0.5:
+    while GPIO.input(GPIO_BTN_PIN) == BUTTON_ON_STATE and hold_time < total_time:
+        print(GPIO.input(GPIO_BTN_PIN), hold_time)
+        if hold_time > 0.1:
             status_led.on()
-        if GPIO.input(GPIO_BTN_PIN) == GPIO.LOW and hold_time > 0.5:
+        if GPIO.input(GPIO_BTN_PIN) == BUTTON_OFF_STATE and hold_time > 0.5:
             break
         hold_time = time.time() - start_time
         time.sleep(check_interval)
@@ -81,9 +90,12 @@ def process_button_event():
 def init_nuke():
     GPIO.setmode(GPIO.BCM)
 
-    GPIO.setup(GPIO_BTN_SRC, GPIO.OUT, initial=GPIO.HIGH)
-    GPIO.setup(GPIO_BTN_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    GPIO.add_event_detect(GPIO_BTN_PIN, GPIO.RISING, callback=gpio_callback, bouncetime=200)
+    GPIO.setup(GPIO_BTN_SRC, GPIO.OUT, initial=BUTTON_INITIAL_STATE)
+    GPIO.setup(GPIO_BTN_PIN, GPIO.IN, pull_up_down=BUTTON_PUD)
+
+    status_led.blink(3)
+
+    GPIO.add_event_detect(GPIO_BTN_PIN, BUTTON_EDGE, callback=gpio_callback, bouncetime=250)
 
     # So maybe the pin is already shorted?
     process_button_event()

@@ -4,9 +4,17 @@ import RPi.GPIO as GPIO
 import os, signal
 import time
 
-GPIO_BTN_PIN = 26
-GPIO_BTN_SRC = 20
-LED_PIN = 21
+# NC BUTTON - UNIQUE CONFIG to ONE MODEL
+GPIO_BTN_PIN = 21
+GPIO_BTN_SRC = 26
+LED_PIN = 20
+
+BUTTON_OFF_STATE = GPIO.LOW
+BUTTON_ON_STATE = GPIO.HIGH
+
+BUTTON_INITIAL_STATE = GPIO.HIGH  # NC button
+BUTTON_PUD = GPIO.PUD_UP
+BUTTON_EDGE = GPIO.RISING
 
 def on():
     GPIO.output(LED_PIN, GPIO.HIGH)
@@ -19,7 +27,7 @@ def btn_pressed(arg0):
     process_btn_hold()
 
 def process_btn_hold():
-    if GPIO.input(GPIO_BTN_PIN) == GPIO.LOW:
+    if GPIO.input(GPIO_BTN_PIN) == BUTTON_OFF_STATE:
         print("process button hold - but GPIO is low")
         return
 
@@ -29,11 +37,11 @@ def process_btn_hold():
     start_time = time.time()
     hold_time = 0
 
-    while GPIO.input(GPIO_BTN_PIN) == GPIO.HIGH and hold_time < total_time:
+    while GPIO.input(GPIO_BTN_PIN) == BUTTON_ON_STATE and hold_time < total_time:
         print(GPIO.input(GPIO_BTN_PIN), hold_time)
         if hold_time > 0.1:
             on()
-        if GPIO.input(GPIO_BTN_PIN) == GPIO.LOW and hold_time > 0.5:
+        if GPIO.input(GPIO_BTN_PIN) == BUTTON_OFF_STATE and hold_time > 0.5:
             break
         hold_time = time.time() - start_time
         time.sleep(check_interval)
@@ -50,9 +58,9 @@ def init():
     GPIO.cleanup()
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(LED_PIN, GPIO.OUT, initial=GPIO.LOW)
-    GPIO.setup(GPIO_BTN_SRC, GPIO.OUT, initial=GPIO.HIGH)
-    GPIO.setup(GPIO_BTN_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    GPIO.add_event_detect(GPIO_BTN_PIN, GPIO.RISING, callback=btn_pressed, bouncetime=500)
+    GPIO.setup(GPIO_BTN_SRC, GPIO.OUT, initial=BUTTON_INITIAL_STATE)  # it's an NC button
+    GPIO.setup(GPIO_BTN_PIN, GPIO.IN, pull_up_down=BUTTON_PUD)
+    GPIO.add_event_detect(GPIO_BTN_PIN, BUTTON_EDGE, callback=btn_pressed, bouncetime=250)
 
     on()
     time.sleep(2)
